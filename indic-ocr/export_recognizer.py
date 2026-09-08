@@ -43,6 +43,7 @@ def export_recognizer_visual(
     bundle_dir: Path,
     output_dir: Path,
     opset: int = 18,
+    quantize_int8: bool = False,
 ) -> Path:
     """Export the vision encoder component of Qwen3.5-0.8B to ONNX."""
     weights_path = bundle_dir / "weights" / "ocr"
@@ -100,7 +101,87 @@ def export_recognizer_visual(
     onnx_model = onnx.load(str(visual_onnx_path))
     onnx.checker.check_model(onnx_model)
     logger.info("Visual encoder exported and verified successfully.")
+
+    if quantize_int8:
+        int8_onnx_path = output_dir / "visual_encoder_int8.onnx"
+        _quantize_int8(visual_onnx_path, int8_onnx_path)
+
     return visual_onnx_path
+
+
+def _get_node_deps(node: onnx.NodeProto) -> set[str]:
+    """Extract all input tensor dependencies for a node, including subgraph captures."""
+    deps = set(inp for inp in node.input if inp != "")
+    for attr in node.attribute:
+        if attr.type == onnx.AttributeProto.GRAPH:
+            subgraph = attr.g
+            sub_produced = set(inp.name for inp in subgraph.input)
+            for sn in subgraph.node:
+                for inp in sn.input:
+                    if inp and inp not in sub_produced:
+                        deps.add(inp)
+                for out in sn.output:
+                    if out:
+                        sub_produced.add(out)
+    return deps
+
+
+def _topological_sort(graph: onnx.GraphProto) -> bool:
+    """Sort ONNX graph nodes in topological dependency order."""
+    available = set(inp.name for inp in graph.input)
+    available.update(init.name for init in graph.initializer)
+
+    nodes = list(graph.node)
+    sorted_nodes: list[onnx.NodeProto] = []
+
+    while nodes:
+        progress = False
+        remaining: list[onnx.NodeProto] = []
+        for node in nodes:
+            deps = _get_node_deps(node)
+            if all(dep in available for dep in deps):
+                sorted_nodes.append(node)
+                available.update(out for out in node.output if out != "")
+                progress = True
+            else:
+                remaining.append(node)
+        if not progress:
+            return False
+        nodes = remaining
+
+    del graph.node[:]
+    graph.node.extend(sorted_nodes)
+    return True
+
+
+def _quantize_int8(input_path: Path, output_path: Path) -> None:
+    """Dynamic INT8 quantization for the visual encoder backbone."""
+    from onnxruntime.quantization import QuantType, quantize_dynamic
+
+    logger.info("Quantizing visual encoder to dynamic INT8 -> %s", output_path)
+    quantize_dynamic(
+        model_input=input_path,
+        model_output=output_path,
+        weight_type=QuantType.QInt8,
+    )
+
+    logger.info("Topologically sorting quantized graph nodes...")
+    model = onnx.load(str(output_path))
+    if not _topological_sort(model.graph):
+        logger.warning("Topological sort could not resolve all dependencies.")
+    onnx.save(model, str(output_path))
+
+    logger.info("Verifying quantized model with ONNX checker...")
+    onnx.checker.check_model(model)
+
+    orig_mb = input_path.stat().st_size / (1024 * 1024)
+    q_mb = output_path.stat().st_size / (1024 * 1024)
+    logger.info(
+        "INT8 quantization complete: %.1f MB -> %.1f MB (%.1fx compression)",
+        orig_mb,
+        q_mb,
+        orig_mb / q_mb,
+    )
 
 
 def main() -> None:
@@ -125,12 +206,18 @@ def main() -> None:
         default=18,
         help="ONNX opset version (default: 18).",
     )
+    parser.add_argument(
+        "--quantize-int8",
+        action="store_true",
+        help="Generate an additional INT8 dynamically quantized model.",
+    )
     args = parser.parse_args()
 
     export_recognizer_visual(
         bundle_dir=args.bundle_dir.resolve(),
         output_dir=args.output_dir.resolve(),
         opset=args.opset,
+        quantize_int8=args.quantize_int8,
     )
 
 

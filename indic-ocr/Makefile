@@ -18,8 +18,9 @@ help:
 	@echo "  venv              Create .venv and install dependencies using uv"
 	@echo "  download-weights  Download model weights and assets from Hugging Face"
 	@echo "  export-layout     Export Stage 1 layout model (RT-DETR) to ONNX (+ INT8)"
-	@echo "  export-recognizer Export Stage 2 visual backbone and tokenizer assets"
+	@echo "  export-recognizer Export Stage 2 visual backbone (+ INT8) and tokenizer"
 	@echo "  export            Export both layout and recognizer models"
+	@echo "  export-int8       Export INT8 versions for both layout and recognizer"
 	@echo "  parity-check      Run numerical parity check comparing PyTorch vs ONNX"
 	@echo "  parity-check-int8 Run parity check against the quantized INT8 layout model"
 	@echo "  demo              Run sample end-to-end inference pipeline on test image"
@@ -47,10 +48,16 @@ export-layout:
 
 .PHONY: export-recognizer
 export-recognizer:
-	$(PYTHON) export_recognizer.py --bundle-dir $(BUNDLE_DIR)
+	$(PYTHON) export_recognizer.py --bundle-dir $(BUNDLE_DIR) --quantize-int8
+
+.PHONY: export-recognizer-int8
+export-recognizer-int8: export-recognizer
 
 .PHONY: export
 export: export-layout export-recognizer
+
+.PHONY: export-int8
+export-int8: export-layout export-recognizer
 
 .PHONY: parity-check
 parity-check:

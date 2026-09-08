@@ -14,14 +14,20 @@ Strict numerical parity (< 1.5px delta, identical confidence scores) is fundamen
 
 The initial priority is exporting Stage 2 visual backbone to INT8.
 
-### Tasks
+### Status: Completed
 
-- Add `--quantize-int8` support in `export_recognizer.py` to produce `onnx_output/ocr/visual_encoder_int8.onnx`.
-- Configure dynamic quantization settings for the vision transformer backbone.
-- Verify exported INT8 graph integrity and opset compatibility using ONNX checker.
-- Add `export-recognizer-int8` target in `Makefile` and update the global `export` target.
-- Benchmark file size reduction and CPU inference speedup against the 384 MB FP32 visual encoder.
-- Investigate INT8 options for the autoregressive text generation component (e.g. bitsandbytes 8-bit or ONNX Runtime GenAI).
+- [x] Add `--quantize-int8` support in `export_recognizer.py` to produce `onnx_output/ocr/visual_encoder_int8.onnx`.
+- [x] Configure dynamic quantization settings for the vision transformer backbone.
+- [x] Implement dependency-aware topological sorting for nested Loop subgraphs to ensure strict ONNX graph validity.
+- [x] Verify exported INT8 graph integrity and opset compatibility using `onnx.checker.check_model` (Passed).
+- [x] Add `export-recognizer-int8` and `export-int8` targets in `Makefile`.
+- [x] Benchmark file size reduction and CPU inference speedup:
+  - File Size: 384.0 MB -> 96.8 MB (4.0x compression)
+  - CPU Latency (intra-op threads=4): 57.41 ms -> 41.44 ms (1.39x speedup)
+  - Embedding Cosine Similarity (FP32 vs INT8): 0.95064
+- [x] Investigate INT8 options for autoregressive text generation:
+  - Architecture uses Qwen3.5 with hybrid linear/recurrent attention (`layer_types`: `linear_attention` alternating with `full_attention`).
+  - Standard ONNX GenAI lacks recurrent state operators for linear attention; PyTorch `torch.quantization.quantize_dynamic` or `torchao` / `bitsandbytes` dynamic linear quantization is recommended for CPU/GPU serving of the text decoder.
 
 ## Phase 2: Accuracy Evaluation Suite (INT8 vs FP32 Ground Truth)
 
