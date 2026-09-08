@@ -34,6 +34,8 @@ The architecture is completely decoupled from the root repository dependencies, 
 
 ## Setup and Installation
 
+### Step 1: Environment Setup
+
 Create and activate the dedicated virtual environment inside `indic-ocr/`:
 
 ```bash
@@ -42,34 +44,41 @@ source indic-ocr/.venv/bin/activate
 uv pip install -r indic-ocr/requirements.txt
 ```
 
-Alternatively, from the `indic-ocr/` directory, use the provided `Makefile`:
+Alternatively, from the `indic-ocr/` directory:
 
 ```bash
 cd indic-ocr
 make venv
 ```
 
+### Step 2: Download Model Bundle (Prerequisite)
+
+`model_bundle/` is git-ignored as it contains the original PyTorch model weights (~1.7 GB) and vendored architecture definitions. Downloading the bundle is a mandatory prerequisite before exporting ONNX graphs or running parity validation:
+
+```bash
+# Using Makefile
+make download-weights
+
+# Or directly with Python
+indic-ocr/.venv/bin/python indic-ocr/download_weights.py
+```
+
+Requires terms acceptance for `bodhan-ai/indic-ocr` on Hugging Face.
+
 ### Quick Commands (Makefile)
 
 From inside `indic-ocr/`:
 
 - `make help`: Display available targets and descriptions.
-- `make download-weights`: Fetch model weights from Hugging Face.
+- `make download-weights`: Fetch model weights and bundle code from Hugging Face.
 - `make export`: Export both Stage 1 layout detector and Stage 2 visual recognizer.
+- `make export-int8`: Export INT8 quantized variants for both layout and recognizer.
 - `make export-layout`: Export Stage 1 layout model to ONNX with INT8 quantization.
-- `make export-recognizer`: Export Stage 2 visual backbone and tokenizer assets.
-- `make parity-check`: Run full parity validation across test fixtures.
+- `make export-recognizer`: Export Stage 2 visual backbone (+ INT8) and tokenizer assets.
+- `make parity-check`: Run full numerical parity validation across test fixtures.
+- `make parity-check-int8`: Run parity check against the quantized INT8 layout model.
 - `make demo`: Execute sample inference on a test document image.
 - `make clean`: Clean temporary outputs and Python caches.
-
-
-## Downloading Model Weights
-
-Download the pre-trained weights from Hugging Face (requires terms acceptance on `bodhan-ai/indic-ocr`):
-
-```bash
-indic-ocr/.venv/bin/python indic-ocr/download_weights.py
-```
 
 ## Exporting Models to ONNX
 

@@ -111,6 +111,13 @@ def run_parity_suite(
     output_report: Path | None = None,
 ) -> bool:
     """Run parity verification across all benchmark images in images_dir."""
+    layout_weights = bundle_dir / "weights" / "layout"
+    if not layout_weights.exists() or not (bundle_dir / "idp_layout.py").exists():
+        raise FileNotFoundError(
+            f"Model bundle not found at '{bundle_dir}'. "
+            "Please run 'make download-weights' (or 'python download_weights.py') first."
+        )
+
     sys.path.insert(0, str(bundle_dir))
     sys.path.insert(0, str(Path(__file__).parent))
 

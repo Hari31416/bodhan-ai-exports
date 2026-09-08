@@ -37,6 +37,12 @@ class OnnxIndicOCR:
             bundle_dir = root / "model_bundle"
         self.bundle_dir = Path(bundle_dir)
 
+        if not (self.bundle_dir / "idp_offline.py").exists():
+            raise FileNotFoundError(
+                f"Model bundle not found at '{self.bundle_dir}'. "
+                "Please run 'make download-weights' (or 'python download_weights.py') first."
+            )
+
         sys.path.insert(0, str(root))
         sys.path.insert(0, str(self.bundle_dir))
 
