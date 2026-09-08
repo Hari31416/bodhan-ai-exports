@@ -1,0 +1,15 @@
+transformers>=5.7.0
+torch>=2.4.0
+torchvision
+onnx
+onnxruntime
+pillow
+accelerate
+huggingface-hub
+safetensors
+onnxsim
+onnxscript
+requests
+optimum
+pyarrow
+pytest

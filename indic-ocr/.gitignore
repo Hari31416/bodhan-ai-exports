@@ -1,0 +1,14 @@
+# Virtual environment
+.venv/
+
+# Downloaded model weights and cache
+model_bundle/
+
+# Exported ONNX binary artifacts
+onnx_output/
+
+# Test output artifacts
+output_*.md
+output_*.json
+__pycache__/
+*.pyc
