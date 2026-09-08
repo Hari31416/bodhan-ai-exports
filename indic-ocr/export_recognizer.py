@@ -39,6 +39,25 @@ class QwenVisualWrapper(torch.nn.Module):
         return self.visual(pixel_values, grid_thw=grid_thw)
 
 
+class QwenTextDecoderWrapper(torch.nn.Module):
+    """Wrapper around Qwen3.5 language model and lm_head for ONNX export."""
+
+    def __init__(
+        self, language_model: torch.nn.Module, lm_head: torch.nn.Module
+    ) -> None:
+        super().__init__()
+        self.language_model = language_model.eval()
+        self.lm_head = lm_head.eval()
+
+    def forward(
+        self, input_ids: torch.Tensor, position_ids: torch.Tensor
+    ) -> torch.Tensor:
+        hidden = self.language_model(
+            input_ids=input_ids, position_ids=position_ids, use_cache=False
+        ).last_hidden_state
+        return self.lm_head(hidden)
+
+
 def export_recognizer_visual(
     bundle_dir: Path,
     output_dir: Path,
@@ -184,6 +203,89 @@ def _quantize_int8(input_path: Path, output_path: Path) -> None:
     )
 
 
+def export_recognizer_text_decoder(
+    bundle_dir: Path,
+    output_dir: Path,
+    opset: int = 18,
+    quantize_int8: bool = False,
+) -> Path:
+    """Export the 24-layer Qwen3.5 autoregressive text decoder to ONNX."""
+    weights_path = bundle_dir / "weights" / "ocr"
+    if not weights_path.exists():
+        raise FileNotFoundError(
+            f"OCR weights directory not found at {weights_path}. Run download_weights.py first."
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    decoder_onnx_path = output_dir / "text_decoder.onnx"
+
+    logger.info("Loading Qwen3.5 text model with eager attention from %s", weights_path)
+    model = AutoModelForImageTextToText.from_pretrained(
+        str(weights_path),
+        dtype=torch.float32,
+        attn_implementation="eager",
+        device_map="cpu",
+    ).eval()
+
+    wrapper = QwenTextDecoderWrapper(model.model.language_model, model.lm_head).eval()
+    dummy_ids = torch.tensor([[100, 200]], dtype=torch.long)
+    dummy_pos = torch.tensor([[[0, 1]]], dtype=torch.long)
+
+    logger.info("Exporting text decoder to %s...", decoder_onnx_path)
+    torch.onnx.export(
+        wrapper,
+        (dummy_ids, dummy_pos),
+        str(decoder_onnx_path),
+        input_names=["input_ids", "position_ids"],
+        output_names=["logits"],
+        dynamic_axes={
+            "input_ids": {0: "batch", 1: "seq"},
+            "position_ids": {1: "batch", 2: "seq"},
+            "logits": {0: "batch", 1: "seq"},
+        },
+        opset_version=opset,
+        do_constant_folding=True,
+        dynamo=False,
+    )
+    logger.info("Text decoder ONNX graph exported successfully.")
+
+    # Consolidate loose external data files produced by PyTorch into a single .data file
+    logger.info("Consolidating external initializers into single data file...")
+    model_proto = onnx.load(str(decoder_onnx_path), load_external_data=True)
+    data_filename = f"{decoder_onnx_path.name}.data"
+    onnx.save_model(
+        model_proto,
+        str(decoder_onnx_path),
+        save_as_external_data=True,
+        all_tensors_to_one_file=True,
+        location=data_filename,
+    )
+    # Remove any loose chunk files left behind by torch.onnx.export
+    for loose_file in output_dir.glob("onnx__*"):
+        loose_file.unlink(missing_ok=True)
+    for loose_file in output_dir.glob("_m_*"):
+        loose_file.unlink(missing_ok=True)
+    for loose_file in output_dir.glob("*.weight"):
+        loose_file.unlink(missing_ok=True)
+    logger.info("Consolidation complete -> %s and %s", decoder_onnx_path.name, data_filename)
+
+    if quantize_int8:
+        int8_onnx_path = output_dir / "text_decoder_int8.onnx"
+        logger.info("Quantizing text decoder to dynamic INT8 -> %s...", int8_onnx_path)
+        from onnxruntime.quantization import QuantType, quantize_dynamic
+
+        quantize_dynamic(
+            model_input=decoder_onnx_path,
+            model_output=int8_onnx_path,
+            weight_type=QuantType.QInt8,
+            per_channel=True,
+            reduce_range=False,
+        )
+        logger.info("Text decoder INT8 quantization complete.")
+
+    return decoder_onnx_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Export IndicBlockOCR components to ONNX."
@@ -211,6 +313,11 @@ def main() -> None:
         action="store_true",
         help="Generate an additional INT8 dynamically quantized model.",
     )
+    parser.add_argument(
+        "--export-decoder",
+        action="store_true",
+        help="Export the 24-layer Qwen3.5 text decoder language model.",
+    )
     args = parser.parse_args()
 
     export_recognizer_visual(
@@ -219,6 +326,14 @@ def main() -> None:
         opset=args.opset,
         quantize_int8=args.quantize_int8,
     )
+
+    if args.export_decoder:
+        export_recognizer_text_decoder(
+            bundle_dir=args.bundle_dir.resolve(),
+            output_dir=args.output_dir.resolve(),
+            opset=args.opset,
+            quantize_int8=args.quantize_int8,
+        )
 
 
 if __name__ == "__main__":

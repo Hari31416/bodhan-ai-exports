@@ -62,6 +62,10 @@ export-layout:
 export-recognizer:
 	$(PYTHON) export_recognizer.py --bundle-dir $(BUNDLE_DIR) --quantize-int8
 
+.PHONY: export-text-decoder
+export-text-decoder:
+	$(PYTHON) export_recognizer.py --bundle-dir $(BUNDLE_DIR) --export-decoder --quantize-int8
+
 .PHONY: export-recognizer-int8
 export-recognizer-int8: export-recognizer
 
