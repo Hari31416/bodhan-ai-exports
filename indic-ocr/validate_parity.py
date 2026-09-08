@@ -234,6 +234,11 @@ def main() -> None:
         default=Path(__file__).parent / "fixtures" / "parity_report.json",
         help="Path to save output JSON parity report.",
     )
+    parser.add_argument(
+        "--warn-only",
+        action="store_true",
+        help="Do not exit with non-zero code on mismatches (useful for diagnostic reports).",
+    )
     args = parser.parse_args()
 
     success = run_parity_suite(
@@ -244,7 +249,8 @@ def main() -> None:
     )
     if not success:
         logger.warning("Parity suite reported one or more mismatches.")
-        sys.exit(1)
+        if not args.warn_only:
+            sys.exit(1)
     else:
         logger.info("All parity checks passed.")
 

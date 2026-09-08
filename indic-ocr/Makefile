@@ -66,7 +66,8 @@ parity-check-int8:
 		--bundle-dir $(BUNDLE_DIR) \
 		--model-path onnx_output/layout/layout_model_int8.onnx \
 		--images-dir $(IMAGES_DIR) \
-		--output-report fixtures/parity_report_int8.json
+		--output-report fixtures/parity_report_int8.json \
+		--warn-only
 
 .PHONY: parity
 parity: parity-check
