@@ -149,3 +149,80 @@ indic-ocr/.venv/bin/python indic-ocr/pipeline_onnx.py \
   --output-md output.md \
   --output-json output.json
 ```
+
+## Apple Silicon MLX Export Suite
+
+For macOS environments on Apple Silicon (M1/M2/M3/M4), `indic-ocr` provides a 100% native MLX pipeline that runs entirely on Metal GPU and unified memory without ONNX Runtime.
+
+### MLX Environment Setup
+
+Install MLX dependencies into the virtual environment:
+
+```bash
+uv pip install --python indic-ocr/.venv/bin/python -r indic-ocr/requirements-mlx.txt
+```
+
+### Export Stage 1 Layout Detector to MLX
+
+Export Stage 1 `IndicDocLayout` to MLX safetensors format:
+
+```bash
+indic-ocr/.venv/bin/python indic-ocr/export_layout_mlx.py
+```
+
+Artifacts produced:
+- `mlx_output/layout/model.safetensors` (127 MB)
+- `mlx_output/layout/config.json`
+
+### Export Stage 2 Recognizer to MLX (4-bit, 8-bit, and BF16)
+
+Three precision variants are supported for `IndicBlockOCR` (Qwen3.5-0.8B):
+
+- **8-bit Quantized (`--q-bits 8`) - Recommended:** Highest transcription accuracy with ~1.5s page transcription time.
+  ```bash
+  indic-ocr/.venv/bin/python indic-ocr/export_recognizer_mlx.py --q-bits 8
+  ```
+  Artifacts: `mlx_output/ocr_8bit/model.safetensors` (1.0 GB)
+
+- **4-bit Quantized (`--q-bits 4`):** Maximum compression and lowest memory footprint (~500 MB RAM).
+  ```bash
+  indic-ocr/.venv/bin/python indic-ocr/export_recognizer_mlx.py --q-bits 4
+  ```
+  Artifacts: `mlx_output/ocr_4bit/model.safetensors` (633 MB, 2.7x compression)
+
+- **Full Precision BF16 (`--no-quantize`):** Exact floating-point parity with original PyTorch weights.
+  ```bash
+  indic-ocr/.venv/bin/python indic-ocr/export_recognizer_mlx.py --no-quantize
+  ```
+  Artifacts: `mlx_output/ocr_bf16/model.safetensors` (1.7 GB)
+
+- **Export All Precisions at Once:**
+  ```bash
+  indic-ocr/.venv/bin/python indic-ocr/export_recognizer_mlx.py --all
+  ```
+
+### MLX Parity Validation
+
+Verify layout detection parity between PyTorch and the MLX backend across 25 benchmark document images from `ai4bharat/indicdlp`:
+
+```bash
+indic-ocr/.venv/bin/python indic-ocr/validate_parity_mlx.py --images-dir indic-ocr/fixtures/images
+```
+
+Benchmark Results:
+- Total Evaluated Documents: 25
+- Passed: 25 / 25 (**100% Exact Parity**)
+- Max Box Coordinate Delta across all 25 documents: <= 0.30 px
+- Full report saved to `indic-ocr/fixtures/parity_report_mlx.json`.
+
+### End-to-End MLX Inference
+
+Run full document OCR end-to-end natively in MLX:
+
+```bash
+indic-ocr/.venv/bin/python indic-ocr/pipeline_mlx.py \
+  --image indic-ocr/model_bundle/assets/diagram.png \
+  --output-md output_mlx.md \
+  --output-json output_mlx.json
+```
+

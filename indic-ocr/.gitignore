@@ -7,6 +7,9 @@ model_bundle/
 # Exported ONNX binary artifacts
 onnx_output/
 
+# Exported MLX binary artifacts
+mlx_output/
+
 # Test output artifacts
 output_*.md
 output_*.json

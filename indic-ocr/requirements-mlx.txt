@@ -1,0 +1,7 @@
+mlx>=0.22.0
+mlx-vlm>=0.3.12
+torch>=2.4.0
+transformers>=5.7.0
+pillow
+safetensors
+pytest

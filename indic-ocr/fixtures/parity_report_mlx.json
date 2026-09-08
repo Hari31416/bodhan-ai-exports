@@ -1,0 +1,341 @@
+{
+  "model": "bodhan-ai/indic-ocr",
+  "precision": "bf16",
+  "runtime": "Apple MLX (Metal Performance Shaders / GPU)",
+  "total_images": 25,
+  "passed": 25,
+  "failed": 0,
+  "pass_rate_percent": 100.0,
+  "avg_latency_ms": {
+    "pytorch": 618.78,
+    "mlx": 593.95,
+    "speedup": 1.04
+  },
+  "results": [
+    {
+      "image": "indicdlp_00_ar_as_001025_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 8,
+      "mlx_blocks": 8,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 833.54,
+        "mlx": 590.0,
+        "speedup": 1.41
+      }
+    },
+    {
+      "image": "indicdlp_01_rp_as_000300_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 15,
+      "mlx_blocks": 15,
+      "max_box_delta_px": 0.2,
+      "latency_ms": {
+        "pytorch": 571.56,
+        "mlx": 566.67,
+        "speedup": 1.01
+      }
+    },
+    {
+      "image": "indicdlp_02_ar_as_000568_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 10,
+      "mlx_blocks": 10,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 619.06,
+        "mlx": 603.8,
+        "speedup": 1.03
+      }
+    },
+    {
+      "image": "indicdlp_03_qp_as_000511_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 4,
+      "mlx_blocks": 4,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 579.7,
+        "mlx": 568.45,
+        "speedup": 1.02
+      }
+    },
+    {
+      "image": "indicdlp_04_mn_as_000467_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 7,
+      "mlx_blocks": 7,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 577.57,
+        "mlx": 577.09,
+        "speedup": 1.0
+      }
+    },
+    {
+      "image": "indicdlp_05_tb_as_000055_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 8,
+      "mlx_blocks": 8,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 577.17,
+        "mlx": 592.7,
+        "speedup": 0.97
+      }
+    },
+    {
+      "image": "indicdlp_06_sy_as_000145_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 604.42,
+        "mlx": 599.33,
+        "speedup": 1.01
+      }
+    },
+    {
+      "image": "indicdlp_07_tb_as_001477_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 572.5,
+        "mlx": 568.55,
+        "speedup": 1.01
+      }
+    },
+    {
+      "image": "indicdlp_08_ar_as_000748_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 12,
+      "mlx_blocks": 12,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 597.5,
+        "mlx": 579.73,
+        "speedup": 1.03
+      }
+    },
+    {
+      "image": "indicdlp_09_tb_as_001534_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 586.82,
+        "mlx": 583.36,
+        "speedup": 1.01
+      }
+    },
+    {
+      "image": "indicdlp_10_tb_as_000668_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 11,
+      "mlx_blocks": 11,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 591.31,
+        "mlx": 576.8,
+        "speedup": 1.03
+      }
+    },
+    {
+      "image": "indicdlp_11_sy_as_000077_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 12,
+      "mlx_blocks": 12,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 592.14,
+        "mlx": 600.58,
+        "speedup": 0.99
+      }
+    },
+    {
+      "image": "indicdlp_12_qp_as_000305_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 6,
+      "mlx_blocks": 6,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 577.89,
+        "mlx": 571.81,
+        "speedup": 1.01
+      }
+    },
+    {
+      "image": "indicdlp_13_tb_as_001064_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 8,
+      "mlx_blocks": 8,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 625.83,
+        "mlx": 585.97,
+        "speedup": 1.07
+      }
+    },
+    {
+      "image": "indicdlp_14_nv_as_000357_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 15,
+      "mlx_blocks": 15,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 587.01,
+        "mlx": 586.34,
+        "speedup": 1.0
+      }
+    },
+    {
+      "image": "indicdlp_15_ar_as_000209_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 601.23,
+        "mlx": 581.19,
+        "speedup": 1.03
+      }
+    },
+    {
+      "image": "indicdlp_16_br_as_000274_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 8,
+      "mlx_blocks": 8,
+      "max_box_delta_px": 0.2,
+      "latency_ms": {
+        "pytorch": 607.29,
+        "mlx": 596.65,
+        "speedup": 1.02
+      }
+    },
+    {
+      "image": "indicdlp_17_rp_as_000168_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 4,
+      "mlx_blocks": 4,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 645.91,
+        "mlx": 611.91,
+        "speedup": 1.06
+      }
+    },
+    {
+      "image": "indicdlp_18_sy_as_000276_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 583.5,
+        "mlx": 670.12,
+        "speedup": 0.87
+      }
+    },
+    {
+      "image": "indicdlp_19_np_as_000125_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 78,
+      "mlx_blocks": 78,
+      "max_box_delta_px": 0.3,
+      "latency_ms": {
+        "pytorch": 720.32,
+        "mlx": 616.75,
+        "speedup": 1.17
+      }
+    },
+    {
+      "image": "indicdlp_20_tb_as_000922_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 14,
+      "mlx_blocks": 14,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 667.52,
+        "mlx": 580.64,
+        "speedup": 1.15
+      }
+    },
+    {
+      "image": "indicdlp_21_mg_as_000934_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 12,
+      "mlx_blocks": 12,
+      "max_box_delta_px": 0.2002,
+      "latency_ms": {
+        "pytorch": 725.26,
+        "mlx": 598.76,
+        "speedup": 1.21
+      }
+    },
+    {
+      "image": "indicdlp_22_qp_as_000350_1.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 5,
+      "mlx_blocks": 5,
+      "max_box_delta_px": 0.1,
+      "latency_ms": {
+        "pytorch": 583.98,
+        "mlx": 611.72,
+        "speedup": 0.95
+      }
+    },
+    {
+      "image": "indicdlp_23_rp_as_000947_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 8,
+      "mlx_blocks": 8,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 603.34,
+        "mlx": 628.51,
+        "speedup": 0.96
+      }
+    },
+    {
+      "image": "indicdlp_24_tb_as_000848_0.png",
+      "is_match": true,
+      "mismatches": [],
+      "pt_blocks": 10,
+      "mlx_blocks": 10,
+      "max_box_delta_px": 0.1001,
+      "latency_ms": {
+        "pytorch": 637.1,
+        "mlx": 601.39,
+        "speedup": 1.06
+      }
+    }
+  ]
+}

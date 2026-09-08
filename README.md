@@ -6,7 +6,7 @@ This repository hosts ONNX exports, optimizations, and parity verification suite
 
 - `indic-ocr/` (Active):
   - Architecture: Two-stage document parser (`IndicDocLayout` RT-DETR ~33M params + `IndicBlockOCR` Qwen3.5 ~867M params).
-  - Status: Exported to ONNX, INT8 quantized, and parity-validated on 25 real Indic documents from `ai4bharat/indicdlp` (100% pass, ~1.4x CPU speedup).
+  - Status: Exported to ONNX and Apple MLX (4-bit, 8-bit, BF16), parity-validated on 25 real Indic documents from `ai4bharat/indicdlp` (100% pass across both ONNX and MLX).
 - `indic-translate/` (Planned):
   - Architecture: Gemma-4-E4B (8B conditional generation transformer).
 - `indic-transcribe-core/` (Planned):
