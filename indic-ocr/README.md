@@ -42,6 +42,27 @@ source indic-ocr/.venv/bin/activate
 uv pip install -r indic-ocr/requirements.txt
 ```
 
+Alternatively, from the `indic-ocr/` directory, use the provided `Makefile`:
+
+```bash
+cd indic-ocr
+make venv
+```
+
+### Quick Commands (Makefile)
+
+From inside `indic-ocr/`:
+
+- `make help`: Display available targets and descriptions.
+- `make download-weights`: Fetch model weights from Hugging Face.
+- `make export`: Export both Stage 1 layout detector and Stage 2 visual recognizer.
+- `make export-layout`: Export Stage 1 layout model to ONNX with INT8 quantization.
+- `make export-recognizer`: Export Stage 2 visual backbone and tokenizer assets.
+- `make parity-check`: Run full parity validation across test fixtures.
+- `make demo`: Execute sample inference on a test document image.
+- `make clean`: Clean temporary outputs and Python caches.
+
+
 ## Downloading Model Weights
 
 Download the pre-trained weights from Hugging Face (requires terms acceptance on `bodhan-ai/indic-ocr`):
