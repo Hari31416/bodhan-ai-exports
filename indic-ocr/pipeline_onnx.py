@@ -24,12 +24,13 @@ logger = logging.getLogger("pipeline_onnx")
 
 
 class OnnxIndicOCR:
-    """Integrated OCR pipeline powered by OnnxIndicDocLayout for stage 1."""
+    """Integrated OCR pipeline powered by OnnxIndicDocLayout for stage 1 and flexible stage 2 backends."""
 
     def __init__(
         self,
         layout_onnx_path: str | Path | None = None,
         bundle_dir: str | Path | None = None,
+        ocr_backend: str = "onnx",
         device: str = "cpu",
     ) -> None:
         root = Path(__file__).parent
@@ -57,13 +58,41 @@ class OnnxIndicOCR:
         )
         self.layout = IndicDocLayout(backend=onnx_backend)
 
-        logger.info("Initializing Stage 2 IndicBlockOCR backend on %s...", device)
-        from idp_recognizer import HfRecognizer
-
-        ocr_weights = self.bundle_dir / "weights" / "ocr"
+        logger.info("Initializing Stage 2 OCR recognizer backend ('%s')...", ocr_backend)
         rec_config = RecognizerConfig()
-        hf_backend = HfRecognizer(str(ocr_weights), config=rec_config, device=device)
-        self.ocr = IndicBlockOCR(backend=hf_backend, config=rec_config)
+
+        if ocr_backend in ("onnx", "onnx-int8"):
+            from idp_recognizer_onnx import OnnxRecognizer
+
+            quantized = (ocr_backend == "onnx-int8")
+            backend = OnnxRecognizer(
+                bundle_dir=self.bundle_dir,
+                model_dir=root / "onnx_output" / "ocr",
+                quantized=quantized,
+            )
+        elif ocr_backend.startswith("mlx"):
+            from idp_recognizer_mlx import MlxRecognizer
+
+            mlx_root = root / "mlx_output"
+            if ocr_backend == "mlx-8bit" and (mlx_root / "ocr_8bit").exists():
+                weights_dir = mlx_root / "ocr_8bit"
+            elif ocr_backend == "mlx-4bit" and (mlx_root / "ocr_4bit").exists():
+                weights_dir = mlx_root / "ocr_4bit"
+            elif ocr_backend == "mlx-bf16" and (mlx_root / "ocr_bf16").exists():
+                weights_dir = mlx_root / "ocr_bf16"
+            elif (mlx_root / "ocr_8bit").exists():
+                weights_dir = mlx_root / "ocr_8bit"
+            else:
+                weights_dir = self.bundle_dir / "weights" / "ocr"
+
+            backend = MlxRecognizer(weights_dir=weights_dir)
+        else:
+            from idp_recognizer import HfRecognizer
+
+            ocr_weights = self.bundle_dir / "weights" / "ocr"
+            backend = HfRecognizer(str(ocr_weights), config=rec_config, device=device)
+
+        self.ocr = IndicBlockOCR(backend=backend, config=rec_config)
 
     def parse(self, image_path: str | Path) -> Any:
         """Parse document image into reading-ordered blocks and markdown."""
@@ -121,6 +150,13 @@ def main() -> None:
         help="Path to save per-block structured JSON output.",
     )
     parser.add_argument(
+        "--ocr-backend",
+        type=str,
+        choices=["onnx", "onnx-int8", "mlx", "mlx-8bit", "mlx-4bit", "mlx-bf16", "pytorch"],
+        default="onnx",
+        help="Backend to use for Stage 2 OCR transcription (default: onnx).",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cpu",
@@ -131,6 +167,7 @@ def main() -> None:
     with OnnxIndicOCR(
         layout_onnx_path=args.layout_onnx,
         bundle_dir=args.bundle_dir.resolve(),
+        ocr_backend=args.ocr_backend,
         device=args.device,
     ) as pipeline:
         result = pipeline.parse(args.image.resolve())

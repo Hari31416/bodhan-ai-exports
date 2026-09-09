@@ -30,6 +30,13 @@ help:
 	@echo "  export-recognizer-mlx-all  Export all three MLX precision variants"
 	@echo "  export-mlx        Export Stage 1 layout and all Stage 2 MLX models"
 	@echo "  parity-check-mlx  Run parity check comparing PyTorch vs MLX layout"
+	@echo "  download-fixtures Download real-world benchmark images from ai4bharat/indicdlp"
+	@echo "  bench-bbox        Run Stage 1 bounding box parity benchmark (PyTorch vs ONNX FP32)"
+	@echo "  bench-bbox-int8   Run Stage 1 bounding box benchmark on quantized ONNX INT8"
+	@echo "  bench-bbox-all    Run Stage 1 bbox benchmark across all backends (onnx, onnx-int8, mlx)"
+	@echo "  bench-ocr         Run Stage 2 OCR accuracy/parity benchmark (PyTorch vs MLX)"
+	@echo "  bench-ocr-all     Run Stage 2 OCR benchmark across all backends (mlx, onnx, onnx-int8)"
+	@echo "  bench-all         Run complete Stage 1 + Stage 2 benchmark suite"
 	@echo "  demo-mlx          Run native MLX end-to-end OCR pipeline on Apple Silicon"
 	@echo "  demo-mlx-8bit     Run demo using 8-bit MLX recognizer"
 	@echo "  demo-mlx-4bit     Run demo using 4-bit MLX recognizer"
@@ -97,6 +104,33 @@ parity: parity-check
 
 .PHONY: check
 check: parity-check
+
+.PHONY: download-fixtures
+download-fixtures:
+	$(PYTHON) download_benchmark_fixtures.py --count 10
+
+.PHONY: bench-bbox
+bench-bbox:
+	$(PYTHON) bench_bbox.py --backend onnx
+
+.PHONY: bench-bbox-int8
+bench-bbox-int8:
+	$(PYTHON) bench_bbox.py --backend onnx-int8
+
+.PHONY: bench-bbox-all
+bench-bbox-all:
+	$(PYTHON) bench_bbox.py --all
+
+.PHONY: bench-ocr
+bench-ocr:
+	$(PYTHON) bench_ocr.py --backend mlx --max-crops 5
+
+.PHONY: bench-ocr-all
+bench-ocr-all:
+	$(PYTHON) bench_ocr.py --all --max-crops 5
+
+.PHONY: bench-all
+bench-all: bench-bbox-all bench-ocr-all
 
 .PHONY: export-layout-mlx
 export-layout-mlx:

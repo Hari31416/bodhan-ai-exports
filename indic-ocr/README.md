@@ -226,3 +226,27 @@ indic-ocr/.venv/bin/python indic-ocr/pipeline_mlx.py \
   --output-json output_mlx.json
 ```
 
+## Benchmarking and Parity Suite
+
+For evaluating layout detection bounding boxes and OCR text transcription accuracy across PyTorch, ONNX (FP32 and INT8), and MLX, see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
+
+Quick commands:
+
+```bash
+# Download real-world benchmark images from ai4bharat/indicdlp
+make download-fixtures
+
+# Run Stage 1 layout bounding box parity benchmark
+make bench-bbox
+
+# Run Stage 1 layout benchmark on quantized INT8
+make bench-bbox-int8
+
+# Run Stage 2 OCR accuracy and parity benchmark
+make bench-ocr
+
+# Run full Stage 1 and Stage 2 comparative benchmark suite
+make bench-all
+```
+
+

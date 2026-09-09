@@ -30,13 +30,17 @@ class MlxRecognizer:
 
     def __init__(
         self,
-        model_path: str | Path,
+        model_path: str | Path | None = None,
+        weights_dir: str | Path | None = None,
         max_tokens: int = 512,
         verbose: bool = False,
     ) -> None:
         from mlx_vlm import load
 
-        self.model_path = Path(model_path)
+        path = model_path or weights_dir
+        if path is None:
+            raise ValueError("Either model_path or weights_dir must be provided.")
+        self.model_path = Path(path)
         self.max_tokens = max_tokens
         self.verbose = verbose
 
