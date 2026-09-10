@@ -87,18 +87,25 @@ class OCREvaluator:
         sys.path.insert(0, str(root))
         sys.path.insert(0, str(bundle_dir))
 
-        from idp_recognizer import HfRecognizer
-        from idp_types import RecognizerConfig
+        self._baseline: Any = None
 
-        logger.info("Initializing PyTorch baseline HfRecognizer...")
-        weights_path = bundle_dir / "weights" / "ocr"
-        cfg = RecognizerConfig(dtype="float32", max_tokens=self.max_tokens)
-        self.baseline = HfRecognizer(
-            ckpt=str(weights_path),
-            config=cfg,
-            device="cpu",
-            attn_implementation="eager",
-        )
+    @property
+    def baseline(self) -> Any:
+        """Lazy-load PyTorch baseline recognizer only when needed."""
+        if self._baseline is None:
+            from idp_recognizer import HfRecognizer
+            from idp_types import RecognizerConfig
+
+            logger.info("Initializing PyTorch baseline HfRecognizer...")
+            weights_path = self.bundle_dir / "weights" / "ocr"
+            cfg = RecognizerConfig(dtype="float32", max_tokens=self.max_tokens)
+            self._baseline = HfRecognizer(
+                ckpt=str(weights_path),
+                config=cfg,
+                device="cpu",
+                attn_implementation="eager",
+            )
+        return self._baseline
 
     def load_candidate(self, backend_type: str) -> Any:
         """Instantiate candidate OCR recognizer backend."""
@@ -106,6 +113,7 @@ class OCREvaluator:
 
         if backend_type == "onnx":
             from idp_recognizer_onnx import OnnxRecognizer
+
             logger.info("Loading ONNX FP32 recognizer...")
             return OnnxRecognizer(
                 bundle_dir=self.bundle_dir,
@@ -116,6 +124,7 @@ class OCREvaluator:
 
         elif backend_type == "onnx-int8":
             from idp_recognizer_onnx import OnnxRecognizer
+
             logger.info("Loading ONNX INT8 recognizer...")
             return OnnxRecognizer(
                 bundle_dir=self.bundle_dir,
@@ -127,6 +136,7 @@ class OCREvaluator:
         elif backend_type.startswith("mlx"):
             try:
                 from idp_recognizer_mlx import MlxRecognizer
+
                 mlx_root = root / "mlx_output"
                 if backend_type == "mlx-8bit" and (mlx_root / "ocr_8bit").exists():
                     weights_dir = mlx_root / "ocr_8bit"
@@ -198,10 +208,19 @@ class OCREvaluator:
         crop_requests: list[Any],
     ) -> dict[str, Any]:
         """Run OCR benchmark comparing candidate recognizer against baseline."""
-        logger.info("Starting OCR benchmark for '%s' across %d crops...", backend_name, len(crop_requests))
+        logger.info(
+            "Starting OCR benchmark for '%s' across %d crops...",
+            backend_name,
+            len(crop_requests),
+        )
 
         # 1. Baseline transcription (cached across backends and persisted to disk)
-        cache_file = Path(__file__).parent / "fixtures" / "baseline_cache" / f"ocr_ref_cache_{len(crop_requests)}crops.json"
+        cache_file = (
+            Path(__file__).parent
+            / "fixtures"
+            / "baseline_cache"
+            / f"ocr_ref_cache_{len(crop_requests)}crops.json"
+        )
 
         if self._cached_ref_texts is None:
             if cache_file.exists():
@@ -210,32 +229,84 @@ class OCREvaluator:
                         cache_data = json.load(f)
                     self._cached_ref_texts = cache_data["texts"]
                     self._cached_pt_ms = cache_data["pt_ms"]
-                    logger.info("Loaded persistent baseline OCR transcriptions from %s", cache_file.name)
+                    logger.info(
+                        "Loaded persistent baseline OCR transcriptions from %s",
+                        cache_file.name,
+                    )
                 except Exception as err:
                     logger.warning("Failed to load baseline OCR cache: %s", err)
 
-        if self._cached_ref_texts is None or len(self._cached_ref_texts) != len(crop_requests):
-            logger.info("Transcribing %d crops with PyTorch baseline...", len(crop_requests))
+        if self._cached_ref_texts is None or len(self._cached_ref_texts) != len(
+            crop_requests
+        ):
+            logger.info(
+                "Transcribing %d crops with PyTorch baseline...", len(crop_requests)
+            )
+            ref_texts_list: list[str] = []
             t0 = time.perf_counter()
-            self._cached_ref_texts = self.baseline.transcribe(crop_requests)
+            for idx, req in enumerate(crop_requests, 1):
+                tc0 = time.perf_counter()
+                crop_txt = self.baseline.transcribe([req])[0]
+                tc_ms = (time.perf_counter() - tc0) * 1000.0
+                ref_texts_list.append(crop_txt)
+                snippet = crop_txt[:50].replace("\n", " ")
+                logger.info(
+                    "  [Baseline %d/%d] %.1fs | %d chars | '%s%s'",
+                    idx,
+                    len(crop_requests),
+                    tc_ms / 1000.0,
+                    len(crop_txt),
+                    snippet,
+                    "..." if len(crop_txt) > 50 else "",
+                )
+            self._cached_ref_texts = ref_texts_list
             self._cached_pt_ms = (time.perf_counter() - t0) * 1000.0
 
             # Persist to disk
             cache_file.parent.mkdir(parents=True, exist_ok=True)
             with open(cache_file, "w", encoding="utf-8") as f:
-                json.dump({"texts": self._cached_ref_texts, "pt_ms": self._cached_pt_ms}, f, indent=2)
-            logger.info("Saved persistent baseline OCR transcriptions to %s", cache_file.name)
+                json.dump(
+                    {"texts": self._cached_ref_texts, "pt_ms": self._cached_pt_ms},
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            logger.info(
+                "Saved persistent baseline OCR transcriptions to %s", cache_file.name
+            )
         else:
-            logger.info("Reusing cached PyTorch baseline transcription for %d crops.", len(crop_requests))
+            logger.info(
+                "Reusing cached PyTorch baseline transcription for %d crops.",
+                len(crop_requests),
+            )
 
         ref_texts = self._cached_ref_texts
         pt_total_ms = self._cached_pt_ms
 
-        # 2. Candidate transcription
+        # 2. Candidate transcription with live per-crop progress
         candidate = self.load_candidate(backend_name)
-        logger.info("Transcribing %d crops with %s...", len(crop_requests), backend_name)
+        logger.info(
+            "Transcribing %d crops with %s...", len(crop_requests), backend_name
+        )
+        hyp_texts: list[str] = []
         t0 = time.perf_counter()
-        hyp_texts = candidate.transcribe(crop_requests)
+        for idx, (req, ref) in enumerate(zip(crop_requests, ref_texts), 1):
+            tc0 = time.perf_counter()
+            crop_txt = candidate.transcribe([req])[0]
+            tc_ms = (time.perf_counter() - tc0) * 1000.0
+            hyp_texts.append(crop_txt)
+            cer = compute_cer(ref, crop_txt)
+            snippet = crop_txt[:50].replace("\n", " ")
+            logger.info(
+                "  [%s %d/%d] %.2fs | CER: %.3f | '%s%s'",
+                backend_name,
+                idx,
+                len(crop_requests),
+                tc_ms / 1000.0,
+                cer,
+                snippet,
+                "..." if len(crop_txt) > 50 else "",
+            )
         cand_total_ms = (time.perf_counter() - t0) * 1000.0
         candidate.close()
 
@@ -248,34 +319,40 @@ class OCREvaluator:
         for idx, (ref, hyp) in enumerate(zip(ref_texts, hyp_texts)):
             cer = compute_cer(ref, hyp)
             wer = compute_wer(ref, hyp)
-            em = (ref.strip() == hyp.strip())
+            em = ref.strip() == hyp.strip()
 
             cers.append(cer)
             wers.append(wer)
             if em:
                 exact_matches += 1
 
-            crop_results.append({
-                "crop_index": idx,
-                "reference_chars": len(ref),
-                "hypothesis_chars": len(hyp),
-                "cer": round(cer, 4),
-                "wer": round(wer, 4),
-                "exact_match": em,
-                "reference_snippet": ref[:60] + "..." if len(ref) > 60 else ref,
-                "hypothesis_snippet": hyp[:60] + "..." if len(hyp) > 60 else hyp,
-            })
+            crop_results.append(
+                {
+                    "crop_index": idx,
+                    "reference_chars": len(ref),
+                    "hypothesis_chars": len(hyp),
+                    "cer": round(cer, 4),
+                    "wer": round(wer, 4),
+                    "exact_match": em,
+                    "reference_snippet": ref[:60] + "..." if len(ref) > 60 else ref,
+                    "hypothesis_snippet": hyp[:60] + "..." if len(hyp) > 60 else hyp,
+                }
+            )
 
         mean_cer = float(np.mean(cers)) if cers else 0.0
         mean_wer = float(np.mean(wers)) if wers else 0.0
-        em_rate = float(exact_matches / len(crop_requests) * 100.0) if crop_requests else 0.0
+        em_rate = (
+            float(exact_matches / len(crop_requests) * 100.0) if crop_requests else 0.0
+        )
 
         pt_ms_per_crop = pt_total_ms / len(crop_requests) if crop_requests else 0.0
         cand_ms_per_crop = cand_total_ms / len(crop_requests) if crop_requests else 0.0
         speedup = pt_total_ms / cand_total_ms if cand_total_ms > 0 else 1.0
 
         total_chars = sum(len(h) for h in hyp_texts)
-        throughput_cps = (total_chars / (cand_total_ms / 1000.0)) if cand_total_ms > 0 else 0.0
+        throughput_cps = (
+            (total_chars / (cand_total_ms / 1000.0)) if cand_total_ms > 0 else 0.0
+        )
 
         summary = {
             "backend": backend_name,
@@ -285,9 +362,15 @@ class OCREvaluator:
             "exact_match_pct": round(em_rate, 2),
             "cer_distribution": {
                 "cer_0_exact_pct": round(em_rate, 2),
-                "cer_le_0.05_pct": round(sum(1 for c in cers if c <= 0.05) / len(cers) * 100.0, 2),
-                "cer_le_0.10_pct": round(sum(1 for c in cers if c <= 0.10) / len(cers) * 100.0, 2),
-                "cer_le_0.20_pct": round(sum(1 for c in cers if c <= 0.20) / len(cers) * 100.0, 2),
+                "cer_le_0.05_pct": round(
+                    sum(1 for c in cers if c <= 0.05) / len(cers) * 100.0, 2
+                ),
+                "cer_le_0.10_pct": round(
+                    sum(1 for c in cers if c <= 0.10) / len(cers) * 100.0, 2
+                ),
+                "cer_le_0.20_pct": round(
+                    sum(1 for c in cers if c <= 0.20) / len(cers) * 100.0, 2
+                ),
             },
             "performance": {
                 "pytorch_mean_ms_per_crop": round(pt_ms_per_crop, 2),
@@ -306,7 +389,9 @@ class OCREvaluator:
         perf = s["performance"]
         cer_dist = s["cer_distribution"]
         print("\n" + "=" * 76)
-        print(f"  OCR RECOGNITION BENCHMARK RESULTS: {s['backend'].upper()} ({s['total_crops']} Crops)")
+        print(
+            f"  OCR RECOGNITION BENCHMARK RESULTS: {s['backend'].upper()} ({s['total_crops']} Crops)"
+        )
         print("=" * 76)
         print(f"  Character Error Rate (CER):   {s['mean_cer']:.4f}  (Lower is better)")
         print(f"  Word Error Rate (WER):        {s['mean_wer']:.4f}  (Lower is better)")
@@ -314,9 +399,15 @@ class OCREvaluator:
         print(f"  CER <= 5% (High Accuracy):    {cer_dist['cer_le_0.05_pct']:.1f}%")
         print(f"  CER <= 10% (Readable):        {cer_dist['cer_le_0.10_pct']:.1f}%")
         print("-" * 76)
-        print(f"  PyTorch Baseline Latency:     {perf['pytorch_mean_ms_per_crop']:.2f} ms / crop")
-        print(f"  {s['backend'].upper()} Latency:             {perf['candidate_mean_ms_per_crop']:.2f} ms / crop")
-        print(f"  Throughput:                   {perf['throughput_chars_per_sec']:.1f} chars/sec")
+        print(
+            f"  PyTorch Baseline Latency:     {perf['pytorch_mean_ms_per_crop']:.2f} ms / crop"
+        )
+        print(
+            f"  {s['backend'].upper()} Latency:             {perf['candidate_mean_ms_per_crop']:.2f} ms / crop"
+        )
+        print(
+            f"  Throughput:                   {perf['throughput_chars_per_sec']:.1f} chars/sec"
+        )
         print(f"  Speedup Factor:               {perf['speedup']:.2f}x")
         print("=" * 76 + "\n")
 
@@ -327,7 +418,16 @@ def main() -> None:
     )
     parser.add_argument(
         "--backend",
-        choices=["mlx", "mlx-8bit", "mlx-4bit", "mlx-bf16", "mlx-all", "onnx", "onnx-int8", "all"],
+        choices=[
+            "mlx",
+            "mlx-8bit",
+            "mlx-4bit",
+            "mlx-bf16",
+            "mlx-all",
+            "onnx",
+            "onnx-int8",
+            "all",
+        ],
         default="mlx",
         help="Backend to evaluate (default: mlx).",
     )
@@ -368,7 +468,9 @@ def main() -> None:
     if not img_dir.exists() or not list(img_dir.glob("*.png")):
         img_dir = Path(__file__).parent / "fixtures" / "images"
 
-    image_paths = sorted([p for p in img_dir.glob("*.png") if not p.name.startswith(".")])
+    image_paths = sorted(
+        [p for p in img_dir.glob("*.png") if not p.name.startswith(".")]
+    )
     if not image_paths:
         raise FileNotFoundError(f"No PNG images found in {img_dir}")
 
@@ -376,7 +478,9 @@ def main() -> None:
         bundle_dir=args.bundle_dir.resolve(),
         max_tokens=args.max_tokens,
     )
-    crop_requests = evaluator.extract_crop_requests(image_paths, max_crops=args.max_crops)
+    crop_requests = evaluator.extract_crop_requests(
+        image_paths, max_crops=args.max_crops
+    )
 
     if not crop_requests:
         logger.error("No valid text crops extracted from images.")
@@ -402,9 +506,29 @@ def main() -> None:
         sys.exit(1)
 
     args.output_report.parent.mkdir(parents=True, exist_ok=True)
+
+    base_stem = args.output_report.stem
+    ext = args.output_report.suffix or ".json"
+
+    # Save individual backend reports with backend suffix as filename
+    for b_name, b_report in combined_reports.items():
+        b_suffix = b_name.replace("-", "_")
+        b_path = args.output_report.parent / f"{base_stem}_{b_suffix}{ext}"
+        with open(b_path, "w", encoding="utf-8") as f:
+            json.dump(b_report, f, indent=2, ensure_ascii=False)
+        logger.info("Saved %s benchmark report to %s", b_name, b_path)
+
+        if b_name == "onnx":
+            fp32_path = args.output_report.parent / f"{base_stem}_fp32{ext}"
+            with open(fp32_path, "w", encoding="utf-8") as f:
+                json.dump(b_report, f, indent=2, ensure_ascii=False)
+            logger.info("Saved FP32 benchmark report to %s", fp32_path)
+
     with open(args.output_report, "w", encoding="utf-8") as f:
-        final_out = combined_reports if args.backend == "all" else combined_reports[args.backend]
-        json.dump(final_out, f, indent=2)
+        final_out = (
+            combined_reports if len(backends) > 1 else combined_reports[backends[0]]
+        )
+        json.dump(final_out, f, indent=2, ensure_ascii=False)
     logger.info("Saved benchmark report to %s", args.output_report)
 
 

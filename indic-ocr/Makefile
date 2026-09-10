@@ -123,11 +123,11 @@ bench-bbox-all:
 
 .PHONY: bench-ocr
 bench-ocr:
-	$(PYTHON) bench_ocr.py --backend mlx --max-crops 5
+	$(PYTHON) bench_ocr.py --backend mlx-8bit --max-crops 50
 
 .PHONY: bench-ocr-all
 bench-ocr-all:
-	$(PYTHON) bench_ocr.py --all --max-crops 5
+	$(PYTHON) bench_ocr.py --all --max-crops 50
 
 .PHONY: bench-all
 bench-all: bench-bbox-all bench-ocr-all

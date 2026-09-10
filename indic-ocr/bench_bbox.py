@@ -40,7 +40,9 @@ logging.basicConfig(
 logger = logging.getLogger("bench_bbox")
 
 
-def box_iou(box_a: list[float] | tuple[float, ...], box_b: list[float] | tuple[float, ...]) -> float:
+def box_iou(
+    box_a: list[float] | tuple[float, ...], box_b: list[float] | tuple[float, ...]
+) -> float:
     """Compute Intersection over Union (IoU) between two boxes [x1, y1, x2, y2]."""
     x_left = max(box_a[0], box_b[0])
     y_top = max(box_a[1], box_b[1])
@@ -58,7 +60,9 @@ def box_iou(box_a: list[float] | tuple[float, ...], box_b: list[float] | tuple[f
     return float(inter_area / union_area) if union_area > 0 else 0.0
 
 
-def box_coordinate_delta(box_a: list[float] | tuple[float, ...], box_b: list[float] | tuple[float, ...]) -> tuple[float, float]:
+def box_coordinate_delta(
+    box_a: list[float] | tuple[float, ...], box_b: list[float] | tuple[float, ...]
+) -> tuple[float, float]:
     """Compute (max_delta, mean_delta) in pixels across [x1, y1, x2, y2]."""
     diffs = [abs(a - b) for a, b in zip(box_a, box_b)]
     return float(max(diffs)), float(sum(diffs) / len(diffs))
@@ -105,9 +109,14 @@ class BBoxEvaluator:
         if self.cache_path.exists():
             try:
                 import pickle
+
                 with open(self.cache_path, "rb") as f:
                     self._pt_cache = pickle.load(f)
-                logger.info("Loaded %d cached PyTorch baseline layout predictions from %s", len(self._pt_cache), self.cache_path.name)
+                logger.info(
+                    "Loaded %d cached PyTorch baseline layout predictions from %s",
+                    len(self._pt_cache),
+                    self.cache_path.name,
+                )
             except Exception as err:
                 logger.warning("Could not load baseline layout cache: %s", err)
 
@@ -115,33 +124,50 @@ class BBoxEvaluator:
         """Persist cached baseline layout inferences to disk."""
         if self._pt_cache:
             import pickle
+
             self.cache_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.cache_path, "wb") as f:
                 pickle.dump(self._pt_cache, f)
-            logger.info("Saved %d baseline predictions to cache at %s", len(self._pt_cache), self.cache_path.name)
+            logger.info(
+                "Saved %d baseline predictions to cache at %s",
+                len(self._pt_cache),
+                self.cache_path.name,
+            )
 
     def load_candidate(self, backend_type: str, model_path: Path | None = None) -> Any:
         """Instantiate candidate layout detector backend."""
         from idp_offline import IndicDocLayout
+
         root = Path(__file__).parent
 
         if backend_type == "onnx":
             from layout_onnx import OnnxIndicDocLayout
-            target_path = model_path or (root / "onnx_output" / "layout" / "layout_model.onnx")
+
+            target_path = model_path or (
+                root / "onnx_output" / "layout" / "layout_model.onnx"
+            )
             logger.info("Loading ONNX FP32 detector from %s...", target_path)
-            backend = OnnxIndicDocLayout(onnx_model_path=target_path, bundle_dir=self.bundle_dir)
+            backend = OnnxIndicDocLayout(
+                onnx_model_path=target_path, bundle_dir=self.bundle_dir
+            )
             return IndicDocLayout(backend=backend)
 
         elif backend_type == "onnx-int8":
             from layout_onnx import OnnxIndicDocLayout
-            target_path = model_path or (root / "onnx_output" / "layout" / "layout_model_int8.onnx")
+
+            target_path = model_path or (
+                root / "onnx_output" / "layout" / "layout_model_int8.onnx"
+            )
             logger.info("Loading ONNX INT8 detector from %s...", target_path)
-            backend = OnnxIndicDocLayout(onnx_model_path=target_path, bundle_dir=self.bundle_dir)
+            backend = OnnxIndicDocLayout(
+                onnx_model_path=target_path, bundle_dir=self.bundle_dir
+            )
             return IndicDocLayout(backend=backend)
 
         elif backend_type == "mlx":
             try:
                 from layout_mlx import MlxIndicDocLayout
+
                 logger.info("Loading MLX layout detector...")
                 backend = MlxIndicDocLayout(bundle_dir=self.bundle_dir)
                 return IndicDocLayout(backend=backend)
@@ -210,13 +236,17 @@ class BBoxEvaluator:
             for i, j, _ in matched_pairs
         ]
         max_px_delta = float(max(d[0] for d in coord_deltas)) if coord_deltas else 0.0
-        mean_px_delta = float(np.mean([d[1] for d in coord_deltas])) if coord_deltas else 0.0
+        mean_px_delta = (
+            float(np.mean([d[1] for d in coord_deltas])) if coord_deltas else 0.0
+        )
 
         # Label matching
         label_matches = sum(
             1 for i, j, _ in matched_pairs if pt_blocks[i].label == cand_blocks[j].label
         )
-        label_match_rate = float(label_matches / len(matched_pairs)) if matched_pairs else 1.0
+        label_match_rate = (
+            float(label_matches / len(matched_pairs)) if matched_pairs else 1.0
+        )
 
         # Reading order sequence matching
         pt_order = [b.order for b in pt_blocks]
@@ -230,7 +260,11 @@ class BBoxEvaluator:
         fn = len(pt_blocks) - tp
         precision = float(tp / (tp + fp)) if (tp + fp) > 0 else 1.0
         recall = float(tp / (tp + fn)) if (tp + fn) > 0 else 1.0
-        f1 = float(2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 1.0
+        f1 = (
+            float(2 * precision * recall / (precision + recall))
+            if (precision + recall) > 0
+            else 1.0
+        )
 
         return {
             "image": image_path.name,
@@ -257,7 +291,11 @@ class BBoxEvaluator:
         image_paths: list[Path],
     ) -> dict[str, Any]:
         """Run benchmark across all image paths for a given backend."""
-        logger.info("Starting BBox benchmark for '%s' across %d images...", backend_name, len(image_paths))
+        logger.info(
+            "Starting BBox benchmark for '%s' across %d images...",
+            backend_name,
+            len(image_paths),
+        )
         candidate = self.load_candidate(backend_name)
 
         per_image_results: list[dict[str, Any]] = []
@@ -292,8 +330,14 @@ class BBoxEvaluator:
         iou_90 = sum(1 for iou in all_ious if iou >= 0.90) / len(all_ious) * 100.0
         iou_95 = sum(1 for iou in all_ious if iou >= 0.95) / len(all_ious) * 100.0
 
-        label_match_pct = float(np.mean([r["label_match_rate"] for r in per_image_results]))
-        order_match_pct = sum(1 for r in per_image_results if r["order_match"]) / len(per_image_results) * 100.0
+        label_match_pct = float(
+            np.mean([r["label_match_rate"] for r in per_image_results])
+        )
+        order_match_pct = (
+            sum(1 for r in per_image_results if r["order_match"])
+            / len(per_image_results)
+            * 100.0
+        )
         mean_f1 = float(np.mean([r["f1"] for r in per_image_results]))
 
         avg_pt_ms = float(np.mean(all_pt_latencies))
@@ -333,9 +377,13 @@ class BBoxEvaluator:
         lat = s["latency"]
         iou_dist = s["iou_distribution"]
         print("\n" + "=" * 76)
-        print(f"  LAYOUT BBOX BENCHMARK RESULTS: {s['backend'].upper()} ({s['total_images']} Images)")
+        print(
+            f"  LAYOUT BBOX BENCHMARK RESULTS: {s['backend'].upper()} ({s['total_images']} Images)"
+        )
         print("=" * 76)
-        print(f"  Mean IoU:                  {s['mean_iou']:.4f}  (Min: {s['min_iou']:.4f})")
+        print(
+            f"  Mean IoU:                  {s['mean_iou']:.4f}  (Min: {s['min_iou']:.4f})"
+        )
         print(f"  IoU >= 0.75:               {iou_dist['ge_0.75_pct']:.1f}%")
         print(f"  IoU >= 0.95:               {iou_dist['ge_0.95_pct']:.1f}%")
         print(f"  Max Pixel Delta:           {s['max_px_delta']:.2f} px")
@@ -345,7 +393,9 @@ class BBoxEvaluator:
         print(f"  Detection Mean F1 Score:   {s['mean_f1_score']:.4f}")
         print("-" * 76)
         print(f"  PyTorch Baseline Latency:  {lat['pytorch_mean_ms']:.2f} ms")
-        print(f"  {s['backend'].upper()} Latency:          {lat['candidate_mean_ms']:.2f} ms ({lat['fps']:.1f} FPS)")
+        print(
+            f"  {s['backend'].upper()} Latency:          {lat['candidate_mean_ms']:.2f} ms ({lat['fps']:.1f} FPS)"
+        )
         print(f"  Speedup Factor:            {lat['speedup']:.2f}x")
         print("=" * 76 + "\n")
 
@@ -378,6 +428,12 @@ def main() -> None:
         default=Path(__file__).parent / "fixtures" / "bbox_benchmark_report.json",
         help="Destination JSON file for evaluation metrics.",
     )
+    parser.add_argument(
+        "--max-images",
+        type=int,
+        default=None,
+        help="Maximum number of images to evaluate (default: all).",
+    )
     args = parser.parse_args()
 
     # Determine images directory
@@ -389,9 +445,14 @@ def main() -> None:
         else:
             img_dir = Path(__file__).parent / "fixtures" / "images"
 
-    image_paths = sorted([p for p in img_dir.glob("*.png") if not p.name.startswith(".")])
+    image_paths = sorted(
+        [p for p in img_dir.glob("*.png") if not p.name.startswith(".")]
+    )
     if not image_paths:
         raise FileNotFoundError(f"No PNG images found in {img_dir}")
+
+    if args.max_images:
+        image_paths = image_paths[: args.max_images]
 
     evaluator = BBoxEvaluator(bundle_dir=args.bundle_dir.resolve())
 
@@ -421,18 +482,25 @@ def main() -> None:
     if "onnx" in combined_reports:
         fp32_report = args.output_report.parent / "bbox_benchmark_report_fp32.json"
         with open(fp32_report, "w", encoding="utf-8") as f:
-            json.dump(combined_reports["onnx"], f, indent=2)
+            json.dump(combined_reports["onnx"], f, indent=2, ensure_ascii=False)
         logger.info("Saved FP32 benchmark report to %s", fp32_report)
 
     if "onnx-int8" in combined_reports:
         int8_report = args.output_report.parent / "bbox_benchmark_report_int8.json"
         with open(int8_report, "w", encoding="utf-8") as f:
-            json.dump(combined_reports["onnx-int8"], f, indent=2)
+            json.dump(combined_reports["onnx-int8"], f, indent=2, ensure_ascii=False)
         logger.info("Saved INT8 benchmark report to %s", int8_report)
+    if "mlx" in combined_reports:
+        mlx_report = args.output_report.parent / "bbox_benchmark_report_mlx.json"
+        with open(mlx_report, "w", encoding="utf-8") as f:
+            json.dump(combined_reports["mlx"], f, indent=2, ensure_ascii=False)
+        logger.info("Saved MLX benchmark report to %s", mlx_report)
 
     with open(args.output_report, "w", encoding="utf-8") as f:
-        final_out = combined_reports if len(backends) > 1 else combined_reports[backends[0]]
-        json.dump(final_out, f, indent=2)
+        final_out = (
+            combined_reports if len(backends) > 1 else combined_reports[backends[0]]
+        )
+        json.dump(final_out, f, indent=2, ensure_ascii=False)
     logger.info("Saved benchmark report to %s", args.output_report)
 
     evaluator.save_cache()

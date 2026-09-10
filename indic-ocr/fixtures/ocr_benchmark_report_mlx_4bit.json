@@ -1,0 +1,121 @@
+{
+  "backend": "mlx-4bit",
+  "total_crops": 50,
+  "mean_cer": 0.0483,
+  "mean_wer": 0.0968,
+  "exact_match_pct": 60.0,
+  "cer_distribution": {
+    "cer_0_exact_pct": 60.0,
+    "cer_le_0.05_pct": 82.0,
+    "cer_le_0.10_pct": 86.0,
+    "cer_le_0.20_pct": 92.0
+  },
+  "performance": {
+    "pytorch_mean_ms_per_crop": 9768.58,
+    "candidate_mean_ms_per_crop": 391.36,
+    "throughput_chars_per_sec": 383.7,
+    "speedup": 24.96
+  },
+  "sample_details": [
+    {
+      "crop_index": 0,
+      "reference_chars": 7,
+      "hypothesis_chars": 7,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "$$.২৯$$",
+      "hypothesis_snippet": "$$.২৯$$"
+    },
+    {
+      "crop_index": 1,
+      "reference_chars": 55,
+      "hypothesis_chars": 55,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "উদ্ভিদ বৈচিত্ৰ্য আৰু কৃষক অধিকাৰ সুৰক্ষা অধিনিয়ম, ২০০১",
+      "hypothesis_snippet": "উদ্ভিদ বৈচিত্ৰ্য আৰু কৃষক অধিকাৰ সুৰক্ষা অধিনিয়ম, ২০০১"
+    },
+    {
+      "crop_index": 2,
+      "reference_chars": 47,
+      "hypothesis_chars": 47,
+      "cer": 0.1064,
+      "wer": 0.3333,
+      "exact_match": false,
+      "reference_snippet": "প্ৰাধিক বৰ আদেশ,\nইত্যাদিৰ\nঅবিষ্ৰমাণীকৰণ।\nআৰোপন।",
+      "hypothesis_snippet": "প্ৰাধিক ৰব আদেশ,\nইত্যাদিৰ\nঅধিগ্ৰহাণীকৰণ।\nআৰোপন।"
+    },
+    {
+      "crop_index": 3,
+      "reference_chars": 612,
+      "hypothesis_chars": 635,
+      "cer": 0.0441,
+      "wer": 0.0753,
+      "exact_match": false,
+      "reference_snippet": "৯। প্ৰাধিকাৰৰ সকলো আদেশ আৰু বিনিশ্চয়, অধ্যক্ষ বা এই মৰ্ম্মে ...",
+      "hypothesis_snippet": "৯। প্ৰাধিকাৰৰ সকলো আদেশ আৰু বিনিশ্চয়, অধ্যক্ষ বা এই মর্ম্মে ..."
+    },
+    {
+      "crop_index": 4,
+      "reference_chars": 18,
+      "hypothesis_chars": 18,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "প্ৰাধিকাৰৰ ক্ষমতা।",
+      "hypothesis_snippet": "প্ৰাধিকাৰৰ ক্ষমতা।"
+    },
+    {
+      "crop_index": 5,
+      "reference_chars": 27,
+      "hypothesis_chars": 27,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "পঞ্জীয়ক আৰু তাৰ\nকাৰ্যালয়।",
+      "hypothesis_snippet": "পঞ্জীয়ক আৰু তাৰ\nকাৰ্যালয়।"
+    },
+    {
+      "crop_index": 6,
+      "reference_chars": 35,
+      "hypothesis_chars": 34,
+      "cer": 0.0571,
+      "wer": 0.25,
+      "exact_match": false,
+      "reference_snippet": "উদ্ভিদ বৈচিত্র্যৰ\nৰাষ্ট্ৰীয় পঞ্জী।",
+      "hypothesis_snippet": "উদ্ভিদ বৈচিত্র্যৰ\nৰাষ্ট্ৰীয় পঞ্জী।"
+    },
+    {
+      "crop_index": 7,
+      "reference_chars": 2,
+      "hypothesis_chars": 2,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "২৩",
+      "hypothesis_snippet": "২৩"
+    },
+    {
+      "crop_index": 8,
+      "reference_chars": 69,
+      "hypothesis_chars": 69,
+      "cer": 0.029,
+      "wer": 0.1818,
+      "exact_match": false,
+      "reference_snippet": "যতনে আনিছোঁ লক্ষ্মী তোমাক পূজিবৰে\nসজাই থৈছোঁ শৰাইখনি জ্বলাই ...",
+      "hypothesis_snippet": "যতনে আনিছোঁ লক্ষ্মী তোমাক পূজিবৰে\nসজাই থেছোঁ শৰাইখনি জ্বলাই ..."
+    },
+    {
+      "crop_index": 9,
+      "reference_chars": 27,
+      "hypothesis_chars": 27,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true,
+      "reference_snippet": "আমি সবে নাম ধৰো নধৰিবা দোষ।",
+      "hypothesis_snippet": "আমি সবে নাম ধৰো নধৰিবা দোষ।"
+    }
+  ]
+}
