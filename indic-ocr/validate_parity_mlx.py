@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Validate MLX model parity against PyTorch baseline for IndicOCR.
+"""Validate PyTorch MPS layout parity against a PyTorch CPU baseline for IndicOCR.
 
 Compares Stage 1 (IndicDocLayout):
   - Block detection counts
   - Class label exact match
   - Reading order sequence match
   - Bounding box coordinate tolerances (< 1.5px)
-  - Inference latency (PyTorch CPU vs MLX Metal GPU)
+  - Inference latency (PyTorch CPU vs PyTorch MPS)
 
 Usage:
     indic-ocr/.venv/bin/python indic-ocr/validate_parity_mlx.py \
@@ -131,7 +131,7 @@ def run_parity_suite(
         config=pt_config,
     )
 
-    logger.info("Initializing MLX layout backend on %s...", device)
+    logger.info("Initializing PyTorch MPS layout backend on %s...", device)
     mlx_detector = MlxIndicDocLayout(
         bundle_dir=bundle_dir,
         device=device,
@@ -172,7 +172,7 @@ def run_parity_suite(
     summary = {
         "model": "bodhan-ai/indic-ocr",
         "precision": precision,
-        "runtime": "Apple MLX (Metal Performance Shaders / GPU)",
+        "runtime": "PyTorch on Apple MPS",
         "total_images": len(images),
         "passed": passed_count,
         "failed": len(images) - passed_count,
@@ -208,7 +208,7 @@ def run_parity_suite(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Validate MLX model parity against PyTorch baseline."
+        description="Validate PyTorch MPS layout parity against the PyTorch CPU baseline."
     )
     parser.add_argument(
         "--bundle-dir",

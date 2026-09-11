@@ -30,7 +30,7 @@ logger = logging.getLogger("pipeline_mlx")
 
 
 class MlxIndicOCR:
-    """End-to-end OCR pipeline powered 100% natively by Apple MLX."""
+    """Apple Silicon OCR pipeline with PyTorch MPS layout and MLX recognition."""
 
     def __init__(
         self,
@@ -57,7 +57,7 @@ class MlxIndicOCR:
         from idp_recognizer_mlx import MlxRecognizer
         from layout_mlx import MlxIndicDocLayout
 
-        logger.info("Initializing Stage 1 MLX layout detector...")
+        logger.info("Initializing Stage 1 PyTorch MPS layout detector...")
         layout_backend = MlxIndicDocLayout(
             weights_path=layout_weights_path,
             bundle_dir=self.bundle_dir,
@@ -89,7 +89,7 @@ class MlxIndicOCR:
     def parse(self, image_path: str | Path) -> Any:
         """Parse document image into reading-ordered blocks and markdown."""
         path_str = str(image_path)
-        logger.info("Detecting document layout with MLX for %s...", Path(path_str).name)
+        logger.info("Detecting document layout with PyTorch MPS for %s...", Path(path_str).name)
         layout_result = self.layout.detect(path_str)
         logger.info(
             "Detected %d blocks. Transcribing content with MLX...",
@@ -124,7 +124,7 @@ def main() -> None:
         "--layout-weights",
         type=Path,
         default=None,
-        help="Path to layout MLX model weights (default: mlx_output/layout/model.safetensors).",
+        help="Deprecated. The layout stage uses the bundled PyTorch checkpoint on MPS.",
     )
     parser.add_argument(
         "--ocr-model",

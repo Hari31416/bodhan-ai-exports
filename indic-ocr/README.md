@@ -152,9 +152,14 @@ indic-ocr/.venv/bin/python indic-ocr/pipeline_onnx.py \
   --output-json output.json
 ```
 
-## Apple Silicon MLX Export Suite
+## Apple Silicon inference
 
-For macOS environments on Apple Silicon (M1/M2/M3/M4), `indic-ocr` provides a 100% native MLX pipeline that runs entirely on Metal GPU and unified memory without ONNX Runtime.
+On Apple Silicon, IndicOCR uses two native backends:
+
+- Stage 1 layout detection runs with PyTorch on MPS.
+- Stage 2 text recognition runs with MLX on Metal.
+
+This split is deliberate. PP-DocLayoutV3 does not have an MLX runtime in this project, and converting its weights to MLX SafeTensors alone does not improve inference. The experimental `export_layout_mlx.py` artifact is not loaded by the pipeline or by the published model repositories. Do not use it as a layout backend.
 
 ### MLX Environment Setup
 
@@ -163,18 +168,6 @@ Install MLX dependencies into the virtual environment:
 ```bash
 uv pip install --python indic-ocr/.venv/bin/python -r indic-ocr/requirements-mlx.txt
 ```
-
-### Export Stage 1 Layout Detector to MLX
-
-Export Stage 1 `IndicDocLayout` to MLX safetensors format:
-
-```bash
-indic-ocr/.venv/bin/python indic-ocr/export_layout_mlx.py
-```
-
-Artifacts produced:
-- `mlx_output/layout/model.safetensors` (127 MB)
-- `mlx_output/layout/config.json`
 
 ### Export Stage 2 Recognizer to MLX (4-bit, 8-bit, and BF16)
 
@@ -203,9 +196,9 @@ Three precision variants are supported for `IndicBlockOCR` (Qwen3.5-0.8B):
   indic-ocr/.venv/bin/python indic-ocr/export_recognizer_mlx.py --all
   ```
 
-### MLX Parity Validation
+### Layout validation
 
-Verify layout detection parity between PyTorch and the MLX backend across 25 benchmark document images from `ai4bharat/indicdlp`:
+Verify layout detection parity between PyTorch CPU and PyTorch MPS across benchmark document images from `ai4bharat/indicdlp`:
 
 ```bash
 indic-ocr/.venv/bin/python indic-ocr/validate_parity_mlx.py --images-dir indic-ocr/fixtures/images
@@ -217,9 +210,9 @@ Benchmark Results:
 - Max Box Coordinate Delta across all 25 documents: <= 0.30 px
 - Full report saved to `indic-ocr/fixtures/parity_report_mlx.json`.
 
-### End-to-End MLX Inference
+### End-to-end Apple Silicon inference
 
-Run full document OCR end-to-end natively in MLX:
+Run the full pipeline with PyTorch MPS layout detection and MLX text recognition:
 
 ```bash
 indic-ocr/.venv/bin/python indic-ocr/pipeline_mlx.py \

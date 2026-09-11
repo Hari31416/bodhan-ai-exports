@@ -191,9 +191,9 @@ Evaluated against the PyTorch reference baseline on 50 real-world Indic document
 | Throughput | 15.3 chars/sec | **{throughput:.1f} chars/sec** | **{throughput / 15.3:.1f}x Throughput** |
 | Memory Footprint | ~1.7 GB | **~{cfg["weight_size"]}** | **{cfg["reduction"]} Reduction** |
 
-### Stage 1 Layout Detection Parity (PP-DocLayoutV3)
+### Stage 1 Layout Detection (PP-DocLayoutV3 on PyTorch MPS)
 
-The Stage 1 layout detector weights are bundled under `layout/`:
+Stage 1 runs with PyTorch on Apple's MPS backend. The recognizer uses MLX, but the layout detector does not: this project has no MLX PP-DocLayoutV3 runtime, and converting the layout tensors alone does not improve inference.
 
 | Metric | Score | Note |
 | :--- | :--- | :--- |
@@ -300,9 +300,9 @@ print(output.text.strip())
 ├── chat_template.jinja            # Multimodal chat template
 ├── requirements.txt               # Minimal dependencies
 ├── .gitattributes                 # Git LFS tracking configuration
-└── layout/                        # Stage 1 Layout Detector
+└── layout/                        # Legacy experimental tensor export, not used at runtime
     ├── config.json
-    └── model.safetensors          # PP-DocLayoutV3 MLX weights (~127 MB)
+    └── model.safetensors          # PP-DocLayoutV3 tensors; requires an MLX model implementation
 ```
 
 ## License and Citations
