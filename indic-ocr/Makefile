@@ -42,6 +42,7 @@ help:
 	@echo "  demo-mlx-4bit     Run demo using 4-bit MLX recognizer"
 	@echo "  demo-mlx-bf16     Run demo using full-precision BF16 MLX recognizer"
 	@echo "  demo              Run sample end-to-end inference pipeline on test image"
+	@echo "  gradio            Launch interactive Gradio OCR testing web studio"
 	@echo "  clean             Remove cache and temporary output files"
 	@echo "  clean-onnx        Remove exported ONNX artifacts in onnx_output/"
 	@echo "  clean-mlx         Remove exported MLX artifacts in mlx_output/"
@@ -198,6 +199,10 @@ demo:
 		--image model_bundle/assets/diagram.png \
 		--output-md output_demo.md \
 		--output-json output_demo.json
+
+.PHONY: gradio
+gradio:
+	$(PYTHON) gradio_app.py --port 7860
 
 .PHONY: clean
 clean:

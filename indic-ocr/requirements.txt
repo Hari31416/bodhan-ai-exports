@@ -13,3 +13,4 @@ requests
 optimum
 pyarrow
 pytest
+gradio

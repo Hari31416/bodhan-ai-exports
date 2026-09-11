@@ -26,6 +26,7 @@ The architecture is completely decoupled from the root repository dependencies, 
 - `export_recognizer.py`: Exports Stage 2 visual backbone and packages tokenizers and chat templates.
 - `validate_parity.py`: Comprehensive parity validation suite comparing PyTorch vs ONNX detection outputs and latency.
 - `pipeline_onnx.py`: End-to-end OCR pipeline taking a document image and producing Markdown and structured JSON.
+- `gradio_app.py`: Interactive Gradio testing studio for uploading images, visualizing bounding boxes, and inspecting OCR results.
 - `requirements.txt`: Dedicated environment dependencies.
 - `fixtures/images/`: Benchmark document images extracted from `ai4bharat/indicdlp`.
 - `fixtures/parity_report.json`: Automated parity benchmark metrics and mismatch logs.
@@ -78,6 +79,7 @@ From inside `indic-ocr/`:
 - `make parity-check`: Run full numerical parity validation across test fixtures.
 - `make parity-check-int8`: Run parity check against the quantized INT8 layout model.
 - `make demo`: Execute sample inference on a test document image.
+- `make gradio`: Launch the interactive Gradio OCR testing web studio.
 - `make clean`: Clean temporary outputs and Python caches.
 
 ## Exporting Models to ONNX
@@ -249,4 +251,26 @@ make bench-ocr
 make bench-all
 ```
 
+## Interactive Gradio Testing Server
 
+The Gradio web interface allows users to upload custom images, execute layout detection and text transcription, visualize bounding boxes with reading order and confidence badges, and inspect/export results in rendered Markdown, raw text, and structured JSON.
+
+### Launching the Server
+
+```bash
+# Launch with default settings (port 7860)
+make gradio
+
+# Or launch directly with custom host and port
+indic-ocr/.venv/bin/python indic-ocr/gradio_app.py --host 127.0.0.1 --port 7860
+```
+
+### Features
+
+- Image Upload: Drag-and-drop or select from built-in sample gallery assets.
+- Dual Execution Modes: Choose between full "Layout + OCR (Full)" or quick "Layout Detection Only".
+- Multi-Backend Selection: Apple Silicon MLX (4-bit, 8-bit, BF16), ONNX Runtime, or PyTorch.
+- BBox Visualizer: High-resolution bounding boxes with color coding by category (Title, Text, Table, Header, Footer, Figure, Equation, List, etc.).
+- Reading Order and Confidence: Toggle display of reading order numbers (`#1`, `#2`, ...), class labels, confidence scores, and fill overlays.
+- Multi-Tab Inspection: Rendered Markdown viewer, raw copyable text editor, per-block inspection table, and structured JSON.
+- Export Actions: Download buttons for `.md` Markdown and `.json` structured outputs.

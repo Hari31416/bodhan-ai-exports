@@ -19,3 +19,5 @@ __pycache__/
 # Benchmark fixtures
 fixtures/benchmark_images/
 fixtures/baseline_cache/
+
+.DS_Store
