@@ -1,0 +1,8 @@
+# Ignore Hugging Face repositories bundle
+hf_repos/
+
+# Python cache & virtual environments
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

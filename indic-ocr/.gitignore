@@ -20,4 +20,7 @@ __pycache__/
 fixtures/benchmark_images/
 fixtures/baseline_cache/
 
+# Local Hugging Face repos
+hf_repos/
+
 .DS_Store
